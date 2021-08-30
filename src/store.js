@@ -89,7 +89,7 @@ export const flashBoard = async () => {
     // upload .hex file
     // TODO: check boardName
     try {
-      flashSuccess = await flash(serial, hexBuffer, { boardName: 'mega' })
+      flashSuccess = await flash(serial, hexBuffer, { boardName: 'uno' })
     } catch(e) {
       // console.log(e)
     }

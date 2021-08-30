@@ -20,10 +20,6 @@
 	}
 	$: {
 		if (startflash) {
-			let options = {
-			boardName: 'UNO',
-			debug: true
-			}
 			const serial = navigator.serial;
 			flashSuccess = flashBoard();
 		}
