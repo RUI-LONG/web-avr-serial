@@ -1,11 +1,11 @@
 <script>
-	import { store, requestSerialPort, flashMyBoard} from './store';
+	import { store, requestSerialPort, flashBoard} from './store';
 	import { onDestroy } from 'svelte';
 	import avrbro from './dist/avrbro.m.js'
 
 	export let serialConnected = false;
 	export let startflash = false;
-	export let flashState = false;
+	export let flashSuccess = false;
 	let hexBuffer;
 
 	let port 
@@ -16,6 +16,7 @@
 					port = p
 				})
 		}
+
 	}
 	$: {
 		if (startflash) {
@@ -24,7 +25,7 @@
 			debug: true
 			}
 			const serial = navigator.serial;
-			flashState = flashMyBoard();
+			flashSuccess = flashBoard();
 		}
 	}
 
@@ -33,28 +34,22 @@
 			port.close()
 		}
 	})
-
-
 </script>
 
 <main>
 	<h1>Web Serial API with Matrix Mini</h1>
 	
-	<p>STATUS: </p>	{$store.state}
-	
-
+	<p>Connection Status: 	{$store.state} </p>
+	<p>Flash State: 	{$store.flashState} </p>
 
 	<button disabled={startflash} on:click={() => startflash = true}>flash .hex on board</button>
-
-	<button disabled={serialConnected} on:click={() => serialConnected = true}>Connect USB Device</button>
-
-	{#if flashState}
-		<button>flash fin</button>
+	
+	{#if $store.state != 'active'}
+		<button on:click={() => serialConnected = true}>Connect USB Device</button>
 	{:else}
-		<button>flash Failed</button>
+		<button>DisConnect USB</button>
 	{/if}
 
-	
 </main>
 
 <style>

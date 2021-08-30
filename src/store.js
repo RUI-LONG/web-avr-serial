@@ -3,22 +3,52 @@ import { get, writable } from 'svelte/store';
 export const store = writable({
   data_buff: 0,
   state: 'initial', // initial | active | terminated
+  flashState: false, 
   timer: null,
 });
 
 export const requestSerialPort = async () => {
   const serial = navigator.serial;
-  const port = await serial.requestPort();
-  await port.open({ baudRate: 9600 });
-  store.update((value) => ({
-    ...value,
-    state: 'active',
-  }));
+  try{
+    const port = await serial.requestPort();
+    await port.open({ baudRate: 115200 });
+    store.update((value) => ({
+      ...value,
+      state: 'active',
+    }));
+    
+    const reader = port.readable.getReader()
+    const writer = port.writable.getWriter()
 
-  const reader = port.readable.getReader()
-  const writer = port.writable.getWriter()
+    // TODO: Need to test Listen to data coming from the serial device.
+    // Memo: if using line 24, comment out line 18 const reader = port.readable.getReader()
+    // while (port.readable) {
+    //   const reader = port.readable.getReader();
+    
+    //   try {
+    //     while (true) {
+    //       const { value, done } = await reader.read();
+    //       if (done) {
+    //         // Allow the serial port to be closed later.
+    //         reader.releaseLock();
+    //         break;
+    //       }
+    //       if (value) {
+    //         console.log("value");
+    //         console.log(value);
+    //       }
+    //     }
+    //   } catch (error) {
+    //     // TODO: Handle non-fatal read error.
+    //     console.log(e)
+    //   }
+    // }
+    return {port, reader, writer}
 
-  return {port, reader, writer}
+  } catch(e) {
+    console.log(e)
+  }
+  return null;
 };
 
 
@@ -37,25 +67,34 @@ const readFileAsync = (file) => {
   })
 }
 
-export const flashMyBoard = async () => {
+export const flashBoard = async () => {
   // connect to device using web serial API
+  let flashSuccess = false
   const serial = await requestSerialPort()
+
   if (serial) {
     // get .hex buffer
-    const response = await fetch('bin/app.ino.hex')
-    console.log(response)
-    console.log(serial)
+    const response = await fetch('bin/test.hex')
+    // TODO: check response status
+    // console.log(response)
+    // console.log(serial)
 
     const data = await response.blob()
     const fileData = await readFileAsync(data)
+
     const hexBuffer = parseHex(new TextDecoder("utf-8").decode(fileData))
-    
     // reset the board
-    // await reset(serial)
+    await reset(serial)
     
     // upload .hex file
-    const success = await flash(serial, hexBuffer, { boardName: 'nano' })
-    if (success) {
+    // TODO: check boardName
+    try {
+      flashSuccess = await flash(serial, hexBuffer, { boardName: 'mega' })
+    } catch(e) {
+      // console.log(e)
+    }
+    
+    if (flashSuccess) {
       console.log('.hex file uploaded on board successfully!')
     } else {
       console.log('an error has occurred :(')
@@ -63,4 +102,9 @@ export const flashMyBoard = async () => {
   } else {
     console.log('operation canceled by user')
   }
+
+  store.update((value) => ({
+    ...value,
+    flashState: flashSuccess,
+  }));
 }
